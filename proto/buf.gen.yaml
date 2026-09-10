@@ -1,0 +1,21 @@
+# buf 代码生成配置
+# 全部使用 BSR 远程插件并固定版本：本地与 CI 只需 buf 本体，
+# 无需安装 protoc / protoc-gen-go / grpcio-tools。
+# 执行（在 proto/ 目录下）：buf generate
+# 生成物：../backend/gen（Go）、../ai/gen（Python），随仓库提交。
+version: v1
+plugins:
+  # ---- Go：消息 + gRPC stub（后端为 gRPC client）----
+  - plugin: buf.build/protocolbuffers/go:v1.36.5
+    out: ../backend/gen
+    opt:
+      - paths=source_relative
+  - plugin: buf.build/grpc/go:v1.5.1
+    out: ../backend/gen
+    opt:
+      - paths=source_relative
+  # ---- Python：消息 + gRPC stub（AI 端为 gRPC server）----
+  - plugin: buf.build/protocolbuffers/python:v29.3
+    out: ../ai/gen
+  - plugin: buf.build/grpc/python:v1.71.0
+    out: ../ai/gen

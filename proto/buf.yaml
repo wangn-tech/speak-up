@@ -1,0 +1,19 @@
+# buf 模块配置（proto 契约 lint / breaking 校验）
+# 文档：https://buf.build/docs/configuration/v1/buf-yaml
+version: v1
+# 模块根：proto/ 目录本身为模块根（buf 命令在 proto/ 下执行）
+build:
+  excludes: []
+lint:
+  use:
+    - STANDARD
+  except:
+    # 刻意保留语义化消息命名（ClientTurn / ServerEvent / TaskAck 等），
+    # 与《接口文档（API）》第 2 章保持一致，不强制 Request/Response 标准命名
+    - RPC_REQUEST_RESPONSE_UNIQUE
+    - RPC_REQUEST_STANDARD_NAME
+    - RPC_RESPONSE_STANDARD_NAME
+breaking:
+  # 冻结后（Spec v1.0）对文件级破坏性变更做检测；v0.1 草案阶段仅保留配置
+  use:
+    - FILE

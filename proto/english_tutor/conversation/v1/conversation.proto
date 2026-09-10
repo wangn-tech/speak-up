@@ -1,0 +1,58 @@
+// =============================================================================
+// ConversationService —— 在线对话双工流（后端 gRPC client ↔ AI 端 gRPC server）
+// 对应《接口文档（API）》2.1 /《Spec》2.1.1：在线 ReAct 会话
+// 方向：后端按 turn_seq 递增发送 ClientTurn；AI 端按序回 ServerEvent
+// =============================================================================
+syntax = "proto3";
+
+package english_tutor.conversation.v1;
+
+option go_package = "github.com/wangn-tech/speak-up/backend/gen/english_tutor/conversation/v1;conversationv1";
+
+// 在线对话服务：双工流承载「用户一轮输入 → ASR/回复/TTS 流式事件 → 本轮结束」
+service ConversationService {
+  // 双向流式对话：一个会话对应一条长连接流，流内按轮次（turn_seq）推进
+  rpc StreamChat(stream ClientTurn) returns (stream ServerEvent);
+}
+
+// ASR 转写片段（与 WS 下行 asr_partial / asr_final 对齐，携带分句时间戳）
+message TranscriptChunk {
+  string text = 1; // 转写文本
+  bool is_final = 2; // 是否为尾点（final）结果
+  int64 start_ms = 3; // 相对会话起点的开始时间（毫秒）
+  int64 end_ms = 4; // 相对会话起点的结束时间（毫秒）
+}
+
+// 客户端上行：用户一轮输入（首个 ClientTurn 必须含 session_id / user_id / scene_id）
+message ClientTurn {
+  string session_id = 1;
+  string user_id = 2;
+  string scene_id = 3;
+  uint32 turn_seq = 4; // 轮次序号，同一会话内递增
+  string text = 5; // 客户端文本输入（文字兜底模式）
+  repeated TranscriptChunk transcript = 6; // ASR 转写片段（语音模式）
+  int64 ts_ms = 7; // 客户端时间戳（毫秒）
+}
+
+// 服务端下行：流式事件，具体负载按 type 放入 payload_json（见事件负载表）
+message ServerEvent {
+  string session_id = 1;
+  string turn_id = 2;
+  EventType type = 3;
+  string payload_json = 4; // 各类型负载，见下方 EventType 注释与 API 文档事件负载表
+  int64 ts_ms = 5;
+}
+
+// 事件类型（流生命周期：ASR_* → REPLY_DELTA* → TOOL_*（可选）→ TTS_* → TURN_END）
+enum EventType {
+  EVENT_TYPE_UNSPECIFIED = 0;
+  EVENT_TYPE_ASR_PARTIAL = 1; // payload: {text, is_final}
+  EVENT_TYPE_ASR_FINAL = 2; // payload: {text, is_final}
+  EVENT_TYPE_REPLY_DELTA = 3; // payload: {delta, intent, scene_action}
+  EVENT_TYPE_TOOL_CALL = 4; // payload: {request_id, name, args_json}
+  EVENT_TYPE_TOOL_RESULT = 5; // payload: {request_id, ok, data_json}
+  EVENT_TYPE_TTS_START = 6; // payload: {voice}
+  EVENT_TYPE_TTS_CHUNK = 7; // payload: {audio_base64, format: pcm|mp3, sample_rate}
+  EVENT_TYPE_TURN_END = 8; // payload: {turn_seq, duration_ms, usage_json}
+  EVENT_TYPE_ERROR = 9; // payload: {code, message, retriable}
+}

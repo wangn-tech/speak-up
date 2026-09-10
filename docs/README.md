@@ -8,7 +8,7 @@ SpeakUp（AI 英语口语陪练平台）本阶段（需求与产品技术方案�
 |-|-|-|
 | [PRD — 产品需求文档](prd/prd.md) | 需求、范围、验收、系统架构、选型定稿、附录 A/B | 01 / 02 / 03 / 04 / 06 / 07 / 08 |
 | [Spec — 技术规格](spec/spec.md) | 接口契约、数据设计、AI 编排（ReAct / DAG）、部署、验收联调 | — |
-| [API — 接口文档](api/api.md) | gRPC / REST / WebSocket / Kafka 展开实现手册 | — |
+| [API — 接口文档](api.md) | gRPC / REST / WebSocket / Kafka 展开实现手册 | — |
 | [配置模板 .env.example](.env.example) | 供应商与基础设施键位模板（复制为 `.env` 后填写） | — |
 
 ## 设计图（交互式 HTML，浏览器打开）
@@ -36,4 +36,4 @@ PRD（做什么 / 为什么） → Spec（怎么实现 / 契约） → API（接
 
 - 三份文档自飞书导出并格式化（标题层级、callout → 引用块、html5-block → 设计图链接、路径相对化）；
 - **修正 1 处不一致**：PRD 附录 A.4 示例中 `DASHSCOPE_BASE_URL` 由 `api/v1` 改为 `compatible-mode/v1`，与 PRD 第 12 章选型定稿及 `.env.example` 一致；
-- 目录结构：PRD、Spec、API 分别归档于 `docs/prd/`、`docs/spec/`、`docs/api/`；设计图归档于 `docs/prd/diagrams/`；配置模板为 `docs/.env.example`。
+- 目录结构：PRD、Spec 分别归档于 `docs/prd/`、`docs/spec/`，API 位于 `docs/api.md`；设计图归档于 `docs/prd/diagrams/`；配置模板为 `docs/.env.example`。
