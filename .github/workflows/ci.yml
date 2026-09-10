@@ -152,3 +152,82 @@ jobs:
 
       - name: Build
         run: npm run build
+
+  infra:
+    name: Infrastructure
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Validate Compose
+        run: docker compose -f docker/compose.yml config
+
+      - name: Start infrastructure
+        run: |
+          docker compose -f docker/compose.yml up -d --wait mysql redis kafka
+          docker compose -f docker/compose.yml up --exit-code-from kafka-init kafka-init
+
+      - name: Show service status
+        if: always()
+        run: docker compose -f docker/compose.yml ps -a
+
+      - name: Stop infrastructure
+        if: always()
+        run: docker compose -f docker/compose.yml down -v
+
+  integration:
+    name: Integration
+    needs: [proto, backend, ai, frontend, infra]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Set up Go
+        uses: actions/setup-go@v6
+        with:
+          go-version-file: backend/go.mod
+          cache-dependency-path: backend/go.sum
+
+      - name: Set up uv and Python
+        uses: astral-sh/setup-uv@v9.0.0
+        with:
+          python-version: "3.12"
+          working-directory: ai
+          enable-cache: true
+          cache-dependency-glob: uv.lock
+
+      - name: Install AI dependencies
+        working-directory: ai
+        run: uv sync --locked
+
+      - name: Run local MVP smoke test
+        run: |
+          set -euo pipefail
+          cleanup() {
+            result=$?
+            if [[ $result -ne 0 ]]; then
+              sed -n '1,200p' /tmp/speakup-ai.log || true
+              sed -n '1,200p' /tmp/speakup-gateway.log || true
+              docker compose -f docker/compose.yml logs --tail=100 || true
+            fi
+            jobs -p | xargs -r kill || true
+            docker compose -f docker/compose.yml down -v || true
+            exit $result
+          }
+          trap cleanup EXIT
+          docker compose -f docker/compose.yml up -d --wait mysql redis kafka
+          docker compose -f docker/compose.yml up --exit-code-from kafka-init kafka-init
+          (cd ai && uv run python -m app.main) >/tmp/speakup-ai.log 2>&1 &
+          (cd backend && go run ./cmd/gateway) >/tmp/speakup-gateway.log 2>&1 &
+          for _ in $(seq 1 60); do
+            curl --fail --silent http://127.0.0.1:8080/healthz >/dev/null && break
+            sleep 1
+          done
+          curl --fail http://127.0.0.1:8080/healthz
+          bash scripts/smoke.sh
