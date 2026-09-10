@@ -1,0 +1,51 @@
+// =============================================================================
+// RetrievalService —— RAG 检索与记忆写入（后端 gRPC client ↔ AI 端 gRPC server）
+// 对应《接口文档（API）》2.2 /《Spec》2.1.2
+// collection 取值：rag_knowledge（场景/学习知识库）、conv_memory（对话记忆）
+// =============================================================================
+syntax = "proto3";
+
+package english_tutor.retrieval.v1;
+
+option go_package = "github.com/wangn-tech/speak-up/backend/gen/english_tutor/retrieval/v1;retrievalv1";
+
+// 检索与记忆服务：在线 ReAct 工具调用（rag_search / memory_read）与记忆写入
+service RetrievalService {
+  // 混合召回检索（向量 + 关键词），向量库不可用时返回 ERR_RAG_UNAVAILABLE
+  rpc Search(SearchRequest) returns (SearchResponse);
+  // 写入切片（记忆/知识），以 event_id 幂等去重，重复返回 duplicated=true 且不覆盖
+  rpc Store(StoreRequest) returns (StoreAck);
+}
+
+message SearchRequest {
+  string user_id = 1; // 用户级隔离（知识库可为空表示全局）
+  string query = 2; // 查询文本（由 Agent 构造）
+  string collection = 3; // rag_knowledge | conv_memory
+  uint32 top_k = 4; // 默认 5
+  string filters_json = 5; // 元数据过滤（如 scene_id、content_type、kind）
+  float min_score = 6; // 相似度阈值，默认 0.0
+}
+
+message Chunk {
+  string id = 1;
+  string text = 2;
+  float score = 3; // 相似度得分（Cosine）
+  string payload_json = 4; // 来源元数据（source、scene_id、event_id、created_at 等）
+}
+
+message SearchResponse {
+  repeated Chunk chunks = 1;
+}
+
+message StoreRequest {
+  string event_id = 1; // 幂等键（uuid），point id = event_id（upsert）
+  string user_id = 2;
+  string collection = 3; // rag_knowledge | conv_memory
+  string text = 4;
+  string metadata_json = 5; // payload 元数据
+}
+
+message StoreAck {
+  bool ok = 1;
+  bool duplicated = 2; // true 表示 event_id 已存在，本次未重复写入
+}

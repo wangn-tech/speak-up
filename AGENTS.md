@@ -4,19 +4,21 @@
 
 SpeakUp 是 Web 端 AI 英语口语陪练，核心闭环为场景对话、实时语音、个性化反馈和周期复盘。
 
-仓库当前处于设计阶段，只有 `docs/` 与 CI 配置；`frontend/`、`backend/`、`ai/`、`proto/`、`docker/` 是 Spec 中的目标结构，尚未落地。执行命令或引用路径前先检查文件是否存在，不要把规划内容当成已有实现。
+仓库当前处于契约先行阶段：`proto/` 已包含 Buf 配置和三组 gRPC 契约，并已生成 Go/Python stub。`backend/` 目前只有 `go.mod` 与生成代码，`ai/` 目前只有生成代码；`frontend/`、`docker/` 及各端业务实现尚未落地。执行命令前先检查目录与依赖清单是否存在，不要把 Spec 中的目标结构当成已有实现。
 
 ## 权威资料
 
 | 文件 | 负责内容 |
 |-|-|
+| `proto/**/*.proto` | 可执行的 gRPC 契约，是 RPC 字段、编号和服务定义的事实源 |
+| `proto/buf.yaml`、`proto/buf.gen.yaml` | Proto lint、兼容性规则和 Go/Python 代码生成配置 |
 | `docs/prd/prd.md` | 产品范围、用户行为、优先级、验收口径 |
 | `docs/spec/spec.md` | 服务边界、架构、数据、AI 编排、部署与联调 |
-| `docs/api/api.md` | REST、WebSocket、gRPC、Kafka 的详细接口约定 |
+| `docs/api.md` | REST、WebSocket、gRPC、Kafka 的详细接口约定 |
 | `docs/.env.example` | 配置键清单；只放占位值，不提交真实密钥 |
 | `.github/workflows/ci.yml` | 实际 CI 质量门 |
 
-按内容所属领域使用对应文档；跨文档冲突由 Spec 裁决。三份文档目前均为 v0.1 草案：保留【待评审】和【待实测】标记，不擅自冻结结论。将来加入 `.proto` 后，以其为可执行的 gRPC 契约，并同步 Spec、API 和生成代码。
+按内容所属领域使用对应文档；gRPC 实现以 `.proto` 为准，其他跨文档冲突由 Spec 裁决。三份文档目前均为 v0.1 草案：保留【待评审】和【待实测】标记，不擅自冻结结论。
 
 ## 架构约束
 
@@ -35,7 +37,7 @@ SpeakUp 是 Web 端 AI 英语口语陪练，核心闭环为场景对话、实时
 
 ## CI 质量门
 
-CI 当前无条件运行四个 job，因此首次实现必须补齐四个服务目录及其依赖清单，不能通过跳过 job 掩盖缺失脚手架。命令均在对应目录执行：
+CI 无条件运行四个 job。当前只有 Proto job 具备完整输入；后续实现必须补齐各端目录和依赖清单，不能通过跳过 job 掩盖缺失脚手架。命令均在对应目录执行：
 
 | 目录 | 必须通过的命令 |
 |-|-|

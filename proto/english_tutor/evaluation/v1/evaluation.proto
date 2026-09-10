@@ -1,0 +1,77 @@
+// =============================================================================
+// EvaluationService / ReviewService —— 离线 DAG 任务（后端 gRPC client ↔ AI 端）
+// 对应《接口文档（API）》2.3 /《Spec》2.1.3
+// 任务状态机：pending → running → done | failed；failed 可重新 Submit（新 task_id）
+// 回写：任务完成由 AI 端发 Kafka evaluation.completed / review.completed，
+//       不做 gRPC 反向调用；Get 供后端轮询 / 补偿使用。
+// =============================================================================
+syntax = "proto3";
+
+package english_tutor.evaluation.v1;
+
+option go_package = "github.com/wangn-tech/speak-up/backend/gen/english_tutor/evaluation/v1;evaluationv1";
+
+// 反馈评估服务：会话结束触发的反馈 DAG（5 维并行评估）
+service EvaluationService {
+  // 提交反馈任务（对应 Kafka evaluation.trigger），event_id 幂等
+  rpc Submit(EvalTask) returns (TaskAck);
+  // 查询任务结果（MVP 主路径走 Kafka 回写，Get 用于轮询 / 补偿）
+  rpc Get(EvalQuery) returns (EvalResult);
+}
+
+// 周期复盘服务：跨会话聚合的复盘 DAG（趋势 / 错题 / 推荐）
+service ReviewService {
+  // 提交复盘任务（对应 Kafka review.trigger），event_id 幂等
+  rpc Submit(ReviewTask) returns (TaskAck);
+  // 查询复盘结果
+  rpc Get(ReviewQuery) returns (ReviewResult);
+}
+
+// ---- 反馈任务 ----
+message EvalTask {
+  string event_id = 1; // 幂等键（uuid）
+  string session_id = 2;
+  string user_id = 3;
+  string transcript_uri = 4; // 结构化转写（分句对齐后）存储地址
+  string audio_uri = 5; // 会话音频存储地址
+  string timestamps_json = 6; // 分句时间戳（逐句反馈绑定时间戳）
+}
+
+message EvalQuery {
+  string session_id = 1;
+  string user_id = 2;
+}
+
+message EvalResult {
+  string task_id = 1;
+  string status = 2; // pending | running | done | failed
+  string result_json = 3; // dimensions / issues / suggestions（见 Spec 4.3）
+}
+
+// ---- 复盘任务 ----
+message ReviewTask {
+  string event_id = 1; // 幂等键（uuid）
+  string user_id = 2;
+  string session_id = 3; // 触发复盘的会话（可为周期任务的最近会话）
+  string period_start = 4; // 复盘周期起（YYYY-MM-DD）
+  string period_end = 5; // 复盘周期止（YYYY-MM-DD）
+}
+
+message ReviewQuery {
+  string user_id = 1;
+  string period_start = 2;
+  string period_end = 3;
+}
+
+message ReviewResult {
+  string task_id = 1;
+  string status = 2; // pending | running | done | failed
+  string result_json = 3; // stats / highlights / weak_points / recommendations
+}
+
+// ---- 任务提交回执（两个服务共用，刻意保留语义化命名，见 buf.yaml lint 豁免）----
+message TaskAck {
+  string task_id = 1;
+  bool accepted = 2; // 是否受理
+  bool duplicated = 3; // true 表示 event_id 重复，返回已有 task_id，未重复执行
+}

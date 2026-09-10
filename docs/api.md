@@ -6,7 +6,7 @@
 
 本文档是《AI 英语口语陪练平台 — 技术规格（Spec）》第 2 章「接口契约」的展开实现文档，为三端研发与测试提供可直接对着编码、联调与验收的接口参考手册。接口字段、事件 schema 与错误码以本文档为唯一权威；与 Spec / PRD 冲突时按 Spec 第 0 章优先级裁决。
 
-- **上游文档：**本地 [PRD](../prd/prd.md)；本地 [Spec](../spec/spec.md)；
+- **上游文档：**本地 [PRD](prd/prd.md)；本地 [Spec](spec/spec.md)；
 - **标注约定：**【待评审】= 尚未冻结、需评审确认；【待实测】= 依赖真实音频 / 计费验证后校准；
 - **冻结流程：**随 Spec 一同评审，Spec v1.0 冻结时本文档同步冻结；冻结后变更走本文档第 6 章变更记录，不静默修改；
 - **Base URL 约定：**REST 前缀 /api/v1（gin，8080）；WebSocket wss://<host>/ws/conversation；gRPC 仅内网（AI 端 server，50051）。
