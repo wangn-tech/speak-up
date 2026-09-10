@@ -1,7 +1,7 @@
 // =============================================================================
 // ConversationService —— 在线对话双工流（后端 gRPC client ↔ AI 端 gRPC server）
 // 对应《接口文档（API）》2.1 /《Spec》2.1.1：在线 ReAct 会话
-// 方向：后端按 turn_seq 递增发送 ClientTurn；AI 端按序回 ServerEvent
+// 方向：后端按 turn_seq 递增发送 ClientEvent；AI 端按序回 ServerEvent
 // =============================================================================
 syntax = "proto3";
 
@@ -12,7 +12,7 @@ option go_package = "github.com/wangn-tech/speak-up/backend/gen/english_tutor/co
 // 在线对话服务：双工流承载「用户一轮输入 → ASR/回复/TTS 流式事件 → 本轮结束」
 service ConversationService {
   // 双向流式对话：一个会话对应一条长连接流，流内按轮次（turn_seq）推进
-  rpc StreamChat(stream ClientTurn) returns (stream ServerEvent);
+  rpc StreamChat(stream ClientEvent) returns (stream ServerEvent);
 }
 
 // ASR 转写片段（与 WS 下行 asr_partial / asr_final 对齐，携带分句时间戳）
@@ -23,15 +23,37 @@ message TranscriptChunk {
   int64 end_ms = 4; // 相对会话起点的结束时间（毫秒）
 }
 
-// 客户端上行：用户一轮输入（首个 ClientTurn 必须含 session_id / user_id / scene_id）
-message ClientTurn {
+// 客户端上行事件。每帧必须携带 session_id / turn_seq；流的首个 START_TURN
+// 事件还必须携带 user_id / scene_id，后续事件沿用流上下文。
+message ClientEvent {
   string session_id = 1;
   string user_id = 2;
   string scene_id = 3;
   uint32 turn_seq = 4; // 轮次序号，同一会话内递增
-  string text = 5; // 客户端文本输入（文字兜底模式）
-  repeated TranscriptChunk transcript = 6; // ASR 转写片段（语音模式）
-  int64 ts_ms = 7; // 客户端时间戳（毫秒）
+  int64 ts_ms = 5; // 客户端时间戳（毫秒）
+  oneof payload {
+    StartTurn start_turn = 10;
+    AudioChunk audio_chunk = 11;
+    EndTurn end_turn = 12;
+    TextInput text_input = 13;
+  }
+}
+
+message StartTurn {
+  string audio_format = 1; // MVP 固定 pcm_s16le
+  uint32 sample_rate = 2; // MVP 固定 16000
+  uint32 channels = 3; // MVP 固定 1
+}
+
+message AudioChunk {
+  bytes data = 1;
+  uint32 chunk_seq = 2; // 同一 turn 内从 1 递增
+}
+
+message EndTurn {}
+
+message TextInput {
+  string text = 1;
 }
 
 // 服务端下行：流式事件，具体负载按 type 放入 payload_json（见事件负载表）

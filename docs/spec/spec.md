@@ -44,15 +44,22 @@ proto 独立仓库 / 版本管理（buf + go module + grpcio-tools 生成）；�
 
 ```protobuf
 service ConversationService {
-  rpc StreamChat(stream ClientTurn) returns (stream ServerEvent);
+  rpc StreamChat(stream ClientEvent) returns (stream ServerEvent);
 }
 
-message ClientTurn {
+message ClientEvent {
   string session_id = 1; string user_id = 2; string scene_id = 3;
-  uint32 turn_seq = 4;   string text = 5;            // 客户端文本（备用）
-  repeated TranscriptChunk transcript = 6;           // ASR 转写片段
-  int64  ts_ms = 7;
+  uint32 turn_seq = 4; int64 ts_ms = 5;
+  oneof payload {
+    StartTurn start_turn = 10; AudioChunk audio_chunk = 11;
+    EndTurn end_turn = 12; TextInput text_input = 13;
+  }
 }
+
+message StartTurn { string audio_format=1; uint32 sample_rate=2; uint32 channels=3; }
+message AudioChunk { bytes data=1; uint32 chunk_seq=2; }
+message EndTurn {}
+message TextInput { string text=1; }
 
 message ServerEvent {
   string session_id = 1; string turn_id = 2;
@@ -136,6 +143,7 @@ service ReviewService {
 | GET /api/v1/scenes | 场景列表（分页） |
 | GET /api/v1/scenes/{id} | 场景详情 |
 | POST /api/v1/sessions | 创建会话 |
+| GET /api/v1/sessions | 当前用户会话历史（分页） |
 | POST /api/v1/sessions/{id}/end | 结束会话（触发反馈/复盘事件） |
 | GET /api/v1/sessions/{id} | 会话详情（含回合列表） |
 | GET /api/v1/evaluations?session_id= | 查询评估结果 |
@@ -155,13 +163,13 @@ wss://<host>/ws/conversation?token=<JWT>&session_id=<id>
 ### 2.3.2 帧格式
 
 - **上行二进制帧：**PCM 16kHz / 16bit / 单声道，每帧 ≤ 200ms；
-- **上行文本帧：**JSON {type, payload}，type ∈ start | end | interrupt | heartbeat；
+- **上行文本帧：**JSON {type, payload}，type ∈ start | audio_start | audio_end | text | end | interrupt | heartbeat；
 - **下行文本帧：**JSON {type, payload}，type ∈ asr_partial | asr_final | reply_delta | tool_event | tts_start | tts_chunk | turn_end | error | pong；tts_chunk.payload 为 base64 音频。
 
 ### 2.3.3 会话时序（MVP 主路径）
 
 1. 客户端发送 start → 服务端确认会话可用；
-2. 用户语音（二进制帧）→ 服务端透传 AI 端 ASR，下行 asr_partial / asr_final；
+2. 客户端发送 audio_start → 用户语音（二进制帧）→ audio_end；服务端透传 AI 端 ASR，下行 asr_partial / asr_final；文字模式发送 text；
 3. AI 端流式回复：reply_delta（文本）+ tool_event（可选透传）→ tts_start → tts_chunk（音频帧）；
 4. turn_end 结束本轮，客户端可发起下一轮；
 5. 客户端发送 end 或服务端空闲超时 → 会话结束落库。
@@ -181,7 +189,7 @@ wss://<host>/ws/conversation?token=<JWT>&session_id=<id>
 | session.events | 后端 → AI / 落库 | {event_id, session_id, user_id, type, ts} |
 | evaluation.trigger | 后端 → AI 反馈 DAG | {event_id, session_id, user_id, transcript_uri, audio_uri} |
 | review.trigger | 后端 → AI 复盘 DAG | {event_id, user_id, session_id, period_start, period_end} |
-| evaluation.completed / review.completed | AI → 后端 | {task_id, status, result_uri} |
+| evaluation.completed / review.completed | AI → 后端 | {event_id, task_id, session_id, user_id, status, result_json, schema_version} |
 | memory.write | AI → 后端（归档） | {event_id, user_id, content, kind} |
 
 通用头字段 event_id（uuid）用于幂等；分区键取 session_id 保证同会话保序；消息带 schema_version。

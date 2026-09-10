@@ -17,7 +17,7 @@ class ConversationServiceStub(object):
         """
         self.StreamChat = channel.stream_stream(
                 '/english_tutor.conversation.v1.ConversationService/StreamChat',
-                request_serializer=english__tutor_dot_conversation_dot_v1_dot_conversation__pb2.ClientTurn.SerializeToString,
+                request_serializer=english__tutor_dot_conversation_dot_v1_dot_conversation__pb2.ClientEvent.SerializeToString,
                 response_deserializer=english__tutor_dot_conversation_dot_v1_dot_conversation__pb2.ServerEvent.FromString,
                 _registered_method=True)
 
@@ -38,7 +38,7 @@ def add_ConversationServiceServicer_to_server(servicer, server):
     rpc_method_handlers = {
             'StreamChat': grpc.stream_stream_rpc_method_handler(
                     servicer.StreamChat,
-                    request_deserializer=english__tutor_dot_conversation_dot_v1_dot_conversation__pb2.ClientTurn.FromString,
+                    request_deserializer=english__tutor_dot_conversation_dot_v1_dot_conversation__pb2.ClientEvent.FromString,
                     response_serializer=english__tutor_dot_conversation_dot_v1_dot_conversation__pb2.ServerEvent.SerializeToString,
             ),
     }
@@ -68,7 +68,7 @@ class ConversationService(object):
             request_iterator,
             target,
             '/english_tutor.conversation.v1.ConversationService/StreamChat',
-            english__tutor_dot_conversation_dot_v1_dot_conversation__pb2.ClientTurn.SerializeToString,
+            english__tutor_dot_conversation_dot_v1_dot_conversation__pb2.ClientEvent.SerializeToString,
             english__tutor_dot_conversation_dot_v1_dot_conversation__pb2.ServerEvent.FromString,
             options,
             channel_credentials,

@@ -24,7 +24,7 @@ _sym_db = _symbol_database.Default()
 
 
 
-DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n0english_tutor/conversation/v1/conversation.proto\x12\x1d\x65nglish_tutor.conversation.v1\"r\n\x0fTranscriptChunk\x12\x12\n\x04text\x18\x01 \x01(\tR\x04text\x12\x19\n\x08is_final\x18\x02 \x01(\x08R\x07isFinal\x12\x19\n\x08start_ms\x18\x03 \x01(\x03R\x07startMs\x12\x15\n\x06\x65nd_ms\x18\x04 \x01(\x03R\x05\x65ndMs\"\xf3\x01\n\nClientTurn\x12\x1d\n\nsession_id\x18\x01 \x01(\tR\tsessionId\x12\x17\n\x07user_id\x18\x02 \x01(\tR\x06userId\x12\x19\n\x08scene_id\x18\x03 \x01(\tR\x07sceneId\x12\x19\n\x08turn_seq\x18\x04 \x01(\rR\x07turnSeq\x12\x12\n\x04text\x18\x05 \x01(\tR\x04text\x12N\n\ntranscript\x18\x06 \x03(\x0b\x32..english_tutor.conversation.v1.TranscriptChunkR\ntranscript\x12\x13\n\x05ts_ms\x18\x07 \x01(\x03R\x04tsMs\"\xbb\x01\n\x0bServerEvent\x12\x1d\n\nsession_id\x18\x01 \x01(\tR\tsessionId\x12\x17\n\x07turn_id\x18\x02 \x01(\tR\x06turnId\x12<\n\x04type\x18\x03 \x01(\x0e\x32(.english_tutor.conversation.v1.EventTypeR\x04type\x12!\n\x0cpayload_json\x18\x04 \x01(\tR\x0bpayloadJson\x12\x13\n\x05ts_ms\x18\x05 \x01(\x03R\x04tsMs*\x92\x02\n\tEventType\x12\x1a\n\x16\x45VENT_TYPE_UNSPECIFIED\x10\x00\x12\x1a\n\x16\x45VENT_TYPE_ASR_PARTIAL\x10\x01\x12\x18\n\x14\x45VENT_TYPE_ASR_FINAL\x10\x02\x12\x1a\n\x16\x45VENT_TYPE_REPLY_DELTA\x10\x03\x12\x18\n\x14\x45VENT_TYPE_TOOL_CALL\x10\x04\x12\x1a\n\x16\x45VENT_TYPE_TOOL_RESULT\x10\x05\x12\x18\n\x14\x45VENT_TYPE_TTS_START\x10\x06\x12\x18\n\x14\x45VENT_TYPE_TTS_CHUNK\x10\x07\x12\x17\n\x13\x45VENT_TYPE_TURN_END\x10\x08\x12\x14\n\x10\x45VENT_TYPE_ERROR\x10\t2~\n\x13\x43onversationService\x12g\n\nStreamChat\x12).english_tutor.conversation.v1.ClientTurn\x1a*.english_tutor.conversation.v1.ServerEvent(\x01\x30\x01\x42YZWgithub.com/wangn-tech/speak-up/backend/gen/english_tutor/conversation/v1;conversationv1b\x06proto3')
+DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n0english_tutor/conversation/v1/conversation.proto\x12\x1d\x65nglish_tutor.conversation.v1\"r\n\x0fTranscriptChunk\x12\x12\n\x04text\x18\x01 \x01(\tR\x04text\x12\x19\n\x08is_final\x18\x02 \x01(\x08R\x07isFinal\x12\x19\n\x08start_ms\x18\x03 \x01(\x03R\x07startMs\x12\x15\n\x06\x65nd_ms\x18\x04 \x01(\x03R\x05\x65ndMs\"\xc4\x03\n\x0b\x43lientEvent\x12\x1d\n\nsession_id\x18\x01 \x01(\tR\tsessionId\x12\x17\n\x07user_id\x18\x02 \x01(\tR\x06userId\x12\x19\n\x08scene_id\x18\x03 \x01(\tR\x07sceneId\x12\x19\n\x08turn_seq\x18\x04 \x01(\rR\x07turnSeq\x12\x13\n\x05ts_ms\x18\x05 \x01(\x03R\x04tsMs\x12I\n\nstart_turn\x18\n \x01(\x0b\x32(.english_tutor.conversation.v1.StartTurnH\x00R\tstartTurn\x12L\n\x0b\x61udio_chunk\x18\x0b \x01(\x0b\x32).english_tutor.conversation.v1.AudioChunkH\x00R\naudioChunk\x12\x43\n\x08\x65nd_turn\x18\x0c \x01(\x0b\x32&.english_tutor.conversation.v1.EndTurnH\x00R\x07\x65ndTurn\x12I\n\ntext_input\x18\r \x01(\x0b\x32(.english_tutor.conversation.v1.TextInputH\x00R\ttextInputB\t\n\x07payload\"k\n\tStartTurn\x12!\n\x0c\x61udio_format\x18\x01 \x01(\tR\x0b\x61udioFormat\x12\x1f\n\x0bsample_rate\x18\x02 \x01(\rR\nsampleRate\x12\x1a\n\x08\x63hannels\x18\x03 \x01(\rR\x08\x63hannels\"=\n\nAudioChunk\x12\x12\n\x04\x64\x61ta\x18\x01 \x01(\x0cR\x04\x64\x61ta\x12\x1b\n\tchunk_seq\x18\x02 \x01(\rR\x08\x63hunkSeq\"\t\n\x07\x45ndTurn\"\x1f\n\tTextInput\x12\x12\n\x04text\x18\x01 \x01(\tR\x04text\"\xbb\x01\n\x0bServerEvent\x12\x1d\n\nsession_id\x18\x01 \x01(\tR\tsessionId\x12\x17\n\x07turn_id\x18\x02 \x01(\tR\x06turnId\x12<\n\x04type\x18\x03 \x01(\x0e\x32(.english_tutor.conversation.v1.EventTypeR\x04type\x12!\n\x0cpayload_json\x18\x04 \x01(\tR\x0bpayloadJson\x12\x13\n\x05ts_ms\x18\x05 \x01(\x03R\x04tsMs*\x92\x02\n\tEventType\x12\x1a\n\x16\x45VENT_TYPE_UNSPECIFIED\x10\x00\x12\x1a\n\x16\x45VENT_TYPE_ASR_PARTIAL\x10\x01\x12\x18\n\x14\x45VENT_TYPE_ASR_FINAL\x10\x02\x12\x1a\n\x16\x45VENT_TYPE_REPLY_DELTA\x10\x03\x12\x18\n\x14\x45VENT_TYPE_TOOL_CALL\x10\x04\x12\x1a\n\x16\x45VENT_TYPE_TOOL_RESULT\x10\x05\x12\x18\n\x14\x45VENT_TYPE_TTS_START\x10\x06\x12\x18\n\x14\x45VENT_TYPE_TTS_CHUNK\x10\x07\x12\x17\n\x13\x45VENT_TYPE_TURN_END\x10\x08\x12\x14\n\x10\x45VENT_TYPE_ERROR\x10\t2\x7f\n\x13\x43onversationService\x12h\n\nStreamChat\x12*.english_tutor.conversation.v1.ClientEvent\x1a*.english_tutor.conversation.v1.ServerEvent(\x01\x30\x01\x42YZWgithub.com/wangn-tech/speak-up/backend/gen/english_tutor/conversation/v1;conversationv1b\x06proto3')
 
 _globals = globals()
 _builder.BuildMessageAndEnumDescriptors(DESCRIPTOR, _globals)
@@ -32,14 +32,22 @@ _builder.BuildTopDescriptorsAndMessages(DESCRIPTOR, 'english_tutor.conversation.
 if not _descriptor._USE_C_DESCRIPTORS:
   _globals['DESCRIPTOR']._loaded_options = None
   _globals['DESCRIPTOR']._serialized_options = b'ZWgithub.com/wangn-tech/speak-up/backend/gen/english_tutor/conversation/v1;conversationv1'
-  _globals['_EVENTTYPE']._serialized_start=636
-  _globals['_EVENTTYPE']._serialized_end=910
+  _globals['_EVENTTYPE']._serialized_start=1061
+  _globals['_EVENTTYPE']._serialized_end=1335
   _globals['_TRANSCRIPTCHUNK']._serialized_start=83
   _globals['_TRANSCRIPTCHUNK']._serialized_end=197
-  _globals['_CLIENTTURN']._serialized_start=200
-  _globals['_CLIENTTURN']._serialized_end=443
-  _globals['_SERVEREVENT']._serialized_start=446
-  _globals['_SERVEREVENT']._serialized_end=633
-  _globals['_CONVERSATIONSERVICE']._serialized_start=912
-  _globals['_CONVERSATIONSERVICE']._serialized_end=1038
+  _globals['_CLIENTEVENT']._serialized_start=200
+  _globals['_CLIENTEVENT']._serialized_end=652
+  _globals['_STARTTURN']._serialized_start=654
+  _globals['_STARTTURN']._serialized_end=761
+  _globals['_AUDIOCHUNK']._serialized_start=763
+  _globals['_AUDIOCHUNK']._serialized_end=824
+  _globals['_ENDTURN']._serialized_start=826
+  _globals['_ENDTURN']._serialized_end=835
+  _globals['_TEXTINPUT']._serialized_start=837
+  _globals['_TEXTINPUT']._serialized_end=868
+  _globals['_SERVEREVENT']._serialized_start=871
+  _globals['_SERVEREVENT']._serialized_end=1058
+  _globals['_CONVERSATIONSERVICE']._serialized_start=1337
+  _globals['_CONVERSATIONSERVICE']._serialized_end=1464
 # @@protoc_insertion_point(module_scope)
