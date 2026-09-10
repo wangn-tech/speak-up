@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AI Agent 编排 — ReAct 在线循环 + DAG 离线管线</title>
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { font-family:"Microsoft YaHei","PingFang SC",sans-serif; background:#f5f7fa; color:#1f2937; padding:24px; }
+  .wrap { max-width:1180px; margin:0 auto; }
+  h1 { font-size:22px; margin-bottom:6px; }
+  .sub { color:#6b7280; font-size:13px; margin-bottom:20px; }
+  .cols { display:grid; grid-template-columns:repeat(auto-fit,minmax(480px,1fr)); gap:16px; }
+  .panel { background:#fff; border-radius:12px; border:1px solid #e5e7eb; padding:16px; box-shadow:0 1px 3px rgba(0,0,0,.05); }
+  .panel h2 { font-size:16px; margin-bottom:4px; display:flex; align-items:center; gap:8px; }
+  .badge { font-size:11px; padding:2px 9px; border-radius:10px; font-weight:600; }
+  .b-react { background:#e6f7ec; color:#137a3f; }
+  .b-dag { background:#eff4ff; color:#1d4ed8; }
+  .desc { font-size:12.5px; color:#6b7280; margin-bottom:12px; line-height:1.6; }
+  .flow { display:flex; flex-direction:column; gap:0; }
+  .step { background:#f9fafb; border:1px solid #e5e7eb; border-radius:8px; padding:8px 12px; font-size:13px; display:flex; align-items:center; gap:8px; }
+  .step b { color:#111827; min-width:72px; }
+  .step .en { color:#9ca3af; font-size:11px; }
+  .arrow { text-align:center; color:#9ca3af; font-size:14px; line-height:1.4; }
+  .tools { display:flex; flex-wrap:wrap; gap:6px; margin-top:10px; }
+  .tool { background:#eef2ff; color:#3730a3; border:1px solid #c7d2fe; border-radius:12px; font-size:11.5px; padding:3px 10px; }
+  .tool.off { background:#f3f4f6; color:#6b7280; border-color:#e5e7eb; }
+  .branch { display:grid; grid-template-columns:repeat(2,1fr); gap:8px; margin:4px 0; }
+  .branch .step { text-align:center; justify-content:center; }
+  .merge { background:#fff7ed; border:1px solid #fed7aa; }
+  .footer { margin-top:18px; background:#f0fdf4; border:1px solid #bbf7d0; border-radius:8px; padding:10px 14px; font-size:12.5px; color:#166534; line-height:1.7; }
+  .constraint { font-size:12px; color:#6b7280; margin-top:10px; line-height:1.7; border-top:1px dashed #e5e7eb; padding-top:8px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>AI Agent 编排：ReAct 在线循环 + DAG 离线管线</h1>
+  <div class="sub">AI 英语口语陪练平台 · 2026-09-10 · 统一由 LangGraph StateGraph 承载，图内声明式配置状态 / 超时 / 幂等 / 重试</div>
+
+  <div class="cols">
+    <!-- ReAct 在线 -->
+    <div class="panel">
+      <h2><span class="badge b-react">ReAct · 在线实时</span> 角色扮演 / 意图识别</h2>
+      <div class="desc">每轮对话触发，工具受限循环，服务端收敛后输出回复；约束保证首句延迟达标（目标 ≤3s）。</div>
+      <div class="flow">
+        <div class="step"><b>Thought</b><span class="en">推理当前该做什么</span></div>
+        <div class="arrow">↓</div>
+        <div class="step"><b>Action</b><span class="en">调用 0..n 个白名单工具</span></div>
+        <div class="arrow">↓</div>
+        <div class="step"><b>Observation</b><span class="en">读取工具结果</span></div>
+        <div class="arrow">↓ 循环，最大步数 ≤3 · 超时兜底</div>
+        <div class="step merge"><b>Reply</b><span class="en">角色回复 + 剧情推进动作 → TTS</span></div>
+      </div>
+      <div class="tools">
+        <span class="tool">RAG 检索（记忆 / 知识）</span>
+        <span class="tool">记忆读写（短期 / 长期）</span>
+        <span class="tool">内容安全审核</span>
+        <span class="tool">发音 / 词典查询</span>
+        <span class="tool off">TTS 触发（引擎侧）</span>
+      </div>
+      <div class="constraint">约束：工具白名单 · 单轮最大步数 ≤3 · 每次工具调用超时与重试上限 · 循环超限降级为通用引导语并提示用户 · 意图低置信默认「继续剧情」。</div>
+    </div>
+
+    <!-- DAG 离线 -->
+    <div class="panel">
+      <h2><span class="badge b-dag">DAG · 离线异步</span> 反馈 / 复盘管线</h2>
+      <div class="desc">会话结束后异步触发，并行评估节点 + 汇合聚合，单节点失败可隔离，不阻塞整体管线。</div>
+      <div class="flow">
+        <div class="step"><b>输入</b><span class="en">转写文本 · 音频特征 · 时间戳（+历史 RAG）</span></div>
+        <div class="arrow">↓ 并行分支</div>
+        <div class="branch">
+          <div class="step">发音评测</div>
+          <div class="step">语法纠错</div>
+          <div class="step">流畅度分析</div>
+          <div class="step">内容 / 剧情质量</div>
+        </div>
+        <div class="arrow">↓ 条件边 · 汇合 reduce</div>
+        <div class="step merge"><b>聚合</b><span class="en">评分聚合 → 结构化评估 / 复盘报告</span></div>
+        <div class="arrow">↓</div>
+        <div class="step"><b>落库</b><span class="en">评估写入 · 画像与记忆更新（幂等）</span></div>
+      </div>
+      <div class="tools">
+        <span class="tool">LLM（评测 / 报告生成）</span>
+        <span class="tool">发音评估服务</span>
+        <span class="tool">RAG 检索（历史趋势）</span>
+        <span class="tool off">离线 ASR 精转（paraformer-v2）</span>
+      </div>
+      <div class="constraint">约束：节点失败标记「待补充」而非整体失败 · 幂等执行保证不重复计分 / 不重复写入 · 重试上限与死信入告警 · 复盘失败率单独监控。</div>
+    </div>
+  </div>
+
+  <div class="footer">
+    <b>LangGraph 实现说明：</b>ReAct 用「循环边 + ToolNode」（工具执行节点）表达；DAG 用「并行分支 + 条件边 + 汇合节点（reduce）」表达。两类模式共用同一 StateGraph 基础设施：状态 Schema、超时、幂等、重试与可观测（每步输入输出摘要 / 延迟 / 错误 / token 消耗入日志与 Prometheus 指标）均为图内声明式配置。gRPC 契约：在线 ReAct 会话走 ConversationService（StreamChat 流式）；离线 DAG 任务走 EvaluationService / ReviewService（提交 + 查询，异步回调）。
+  </div>
+</div>
+</body>
+</html>

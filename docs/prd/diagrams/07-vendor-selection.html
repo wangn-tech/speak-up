@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AI 英语口语陪练平台 — 技术选型定稿（2026-09-10）</title>
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { font-family:"Microsoft YaHei","PingFang SC",sans-serif; background:#f5f7fa; color:#1f2937; padding:24px; }
+  .wrap { max-width:1080px; margin:0 auto; }
+  h1 { font-size:22px; margin-bottom:6px; }
+  .sub { color:#6b7280; font-size:13px; margin-bottom:20px; }
+  .note { background:#fff7e6; border:1px solid #ffd591; border-radius:8px; padding:10px 14px; font-size:13px; color:#874d00; margin-bottom:20px; line-height:1.7; }
+  .grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(320px,1fr)); gap:14px; }
+  .card { background:#fff; border-radius:10px; border:1px solid #e5e7eb; padding:14px 16px; box-shadow:0 1px 2px rgba(0,0,0,.04); }
+  .card h2 { font-size:14px; margin-bottom:10px; display:flex; align-items:center; gap:6px; }
+  .tag { font-size:11px; padding:2px 8px; border-radius:10px; font-weight:600; }
+  .tag-first { background:#e6f7ec; color:#137a3f; }
+  .tag-alt { background:#eff4ff; color:#1d4ed8; }
+  .row { font-size:13px; line-height:1.8; margin-bottom:4px; }
+  .row b { color:#111827; }
+  .env { background:#f3f4f6; border-radius:6px; padding:6px 10px; font-size:12px; color:#374151; margin-top:8px; font-family:Consolas,Monaco,monospace; word-break:break-all; line-height:1.7; }
+  .warn { background:#fdeef0; border:1px solid #f5b8c2; border-radius:8px; padding:10px 14px; font-size:13px; color:#9f1d2f; margin-top:20px; line-height:1.8; }
+  .legend { font-size:12px; color:#6b7280; margin-top:14px; }
+  .pill { display:inline-block; padding:1px 7px; border-radius:8px; font-size:11px; margin-right:4px; }
+  .pill-g { background:#e6f7ec; color:#137a3f; }
+  .pill-b { background:#eff4ff; color:#1d4ed8; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>技术选型定稿 · 决策图</h1>
+  <div class="sub">AI 英语口语陪练平台 · 2026-09-10 · 所有配置经 .env 注入，代码不硬编码密钥</div>
+
+  <div class="note">
+    <b>统一入口策略：</b>LLM / Embedding / ASR / TTS 均走<b>阿里云百炼</b>，共用一把 <code>DASHSCOPE_API_KEY</code>、OpenAI 兼容协议（base_url：<code>https://dashscope.aliyuncs.com/compatible-mode/v1</code>）；DeepSeek 无需独立 Key，换 model 名即可（<code>deepseek-v4-pro / flash</code>）。
+  </div>
+
+  <div class="grid">
+    <div class="card">
+      <h2><span class="tag tag-first">首推</span> LLM 对话/评测</h2>
+      <div class="row"><b>通义千问</b> qwen3.7-plus（平衡档）</div>
+      <div class="row">旗舰 qwen3.8-max / 经济 qwen3.6-flash</div>
+      <div class="row"><b>DeepSeek</b> deepseek-v4-pro（长上下文/深度推理，走百炼）</div>
+      <div class="env">DASHSCOPE_API_KEY<br>DASHSCOPE_BASE_URL<br>QWEN_CHAT_MODEL<br>DEEPSEEK_MODEL</div>
+    </div>
+
+    <div class="card">
+      <h2><span class="tag tag-alt">备选</span> LLM 第二供应商</h2>
+      <div class="row">DeepSeek 官方直连（需官方 1M 上下文独立账单时启用）</div>
+      <div class="env">DEEPSEEK_API_KEY<br>DEEPSEEK_BASE_URL=https://api.deepseek.com<br>DEEPSEEK_DIRECT_MODEL</div>
+    </div>
+
+    <div class="card">
+      <h2><span class="tag tag-first">首推</span> Embedding（RAG 向量化）</h2>
+      <div class="row">text-embedding-v4 · 1024 维 · 走百炼 /embeddings</div>
+      <div class="row"><span class="pill pill-b">备选</span> qwen3.7-text-embedding-flash（128K 上下文，更省）</div>
+      <div class="env">EMBEDDING_MODEL<br>EMBEDDING_DIMENSIONS=1024<br>（须与 Qdrant 维度一致）</div>
+    </div>
+
+    <div class="card">
+      <h2><span class="tag tag-first">首推</span> ASR 语音识别</h2>
+      <div class="row"><b>流式（实时对话）</b> paraformer-realtime-v2</div>
+      <div class="row"><b>离线（复盘/评测精转）</b> paraformer-v2</div>
+      <div class="row"><span class="pill pill-b">备选</span> 火山豆包 Doubao_Seed_ASR_Streaming_2.0</div>
+      <div class="env">ASR_PROVIDER / ASR_MODEL_REALTIME<br>ASR_MODEL_OFFLINE / ASR_LANGUAGE_HINTS=zh,en</div>
+    </div>
+
+    <div class="card">
+      <h2><span class="tag tag-first">首推</span> TTS 语音合成</h2>
+      <div class="row"><b>实时流式</b> CosyVoice 系列（基线 cosyvoice-v2）</div>
+      <div class="row">官方已更新 v3 / v3.5，接入以控制台可用列表为准</div>
+      <div class="row"><span class="pill pill-b">备选</span> 火山 seed-tts-2.0</div>
+      <div class="env">TTS_PROVIDER / TTS_MODEL / TTS_VOICE</div>
+    </div>
+
+    <div class="card">
+      <h2><span class="tag tag-first">首推</span> 向量库</h2>
+      <div class="row"><b>Qdrant</b> 单节点 Docker · REST 6333 + gRPC 6334</div>
+      <div class="row">Go / Python 官方客户端，LangChain 一等集成</div>
+      <div class="row"><span class="pill pill-b">备选</span> Milvus（大规模）/ DashVector（托管）</div>
+      <div class="row">主库为 MySQL，<b>不采用 pgvector</b>（需另养一套 PostgreSQL）</div>
+      <div class="env">VECTOR_DB / QDRANT_URL / QDRANT_GRPC_URL<br>QDRANT_API_KEY / QDRANT_VECTOR_DIM=1024</div>
+    </div>
+
+    <div class="card">
+      <h2><span class="tag tag-first">已定</span> 可观测性</h2>
+      <div class="row"><b>Prometheus</b> 指标采集 + <b>Grafana</b> 看板与告警</div>
+      <div class="row">Go 后端 /metrics（9091）、AI 端 /metrics（9092）</div>
+      <div class="row">MVP <b>不引入 ELK</b>（后置评估）；日志 MVP 用 Docker 日志</div>
+      <div class="env">PROMETHEUS_URL / PROMETHEUS_SCRAPE_INTERVAL<br>GRAFANA_PORT=3000 / METRICS_PORT / PYTHON_METRICS_PORT<br>ALERT_WEBHOOK_URL</div>
+    </div>
+
+    <div class="card">
+      <h2><span class="tag tag-alt">基础</span> 基础设施（Docker Compose）</h2>
+      <div class="row">MySQL（业务数据）· Redis（会话/缓存/限流）</div>
+      <div class="row">Kafka（事件总线）· Qdrant（向量）</div>
+      <div class="row">Prometheus · Grafana</div>
+      <div class="env">MYSQL_DSN / REDIS_ADDR / KAFKA_BROKERS</div>
+    </div>
+  </div>
+
+  <div class="warn">
+    <b>模型命名已换代（写代码前必看）：</b>qwen-max/plus/turbo 为旧称（当前 qwen3.x 系列）；DeepSeek 官方 deepseek-chat/reasoner 已弃用，百炼上 deepseek-v3/r1 系列将于 <b>2026-10-10 下架</b>——一律使用 <code>deepseek-v4-pro / deepseek-v4-flash</code>，不要照抄旧教程。<br>
+    <b>两处待实测校准：</b>① paraformer-realtime-v2 流式按量单价官方页未公示，需控制台实测；② ASR/TTS 首包（首字）延迟无官方 SLA，PRD 的 ≤3s 首句 / ≤500ms 首包目标需真实音频 A/B 实测后冻结。
+  </div>
+
+  <div class="legend">完整模板：项目根目录 <b>.env.example</b>（复制为 .env 后填写真实值）；详细对比与官方来源见 PRD 附录 A 与第 12 章。</div>
+</div>
+</body>
+</html>
